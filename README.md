@@ -285,6 +285,6 @@ feat: add /metrics/mrr FastAPI endpoint
 
 ## Why I Built This
 
-I wanted a portfolio project that goes beyond a basic CRUD database and shows real business logic the kind of SQL and data modelling that actually gets used in production. SaaS metrics are something every software company cares about. Building this taught me normalized schema design, advanced SQL (window functions, CTEs, date arithmetic), Docker containerization, and how to expose database results through a clean API.
+I wanted a project that goes beyond a basic CRUD database and shows real business logic the kind of SQL and data modelling that actually gets used in production. SaaS metrics are something every software company cares about. Building this taught me normalized schema design, advanced SQL (window functions, CTEs, date arithmetic), Docker containerization, and how to expose database results through a clean API.
 
 ---
