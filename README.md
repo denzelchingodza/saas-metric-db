@@ -274,9 +274,9 @@ feat: add /metrics/mrr FastAPI endpoint
 ## Build Phases
 
 - [x] **Phase 1** — Project setup: Docker, Postgres, empty database
-- [ ] **Phase 2** — Schema: all 6 tables with constraints and indexes
-- [ ] **Phase 3** — Seed data: 100+ realistic records via Python Faker
-- [ ] **Phase 4** — Core metric queries: MRR, ARR, churn, ARPU, LTV
+- [x] **Phase 2** — Schema: all 6 tables with constraints and indexes
+- [x] **Phase 3** — Seed data: 100+ realistic records via Python Faker
+- [x] **Phase 4** — Core metric queries: MRR, ARR, churn, ARPU, LTV
 - [ ] **Phase 5** — Advanced queries: cohort analysis, MRR movement, NRR
 - [ ] **Phase 6** — FastAPI layer: HTTP endpoints for every metric
 - [ ] **Phase 7** — Polish: views, indexes, performance tuning, final README
