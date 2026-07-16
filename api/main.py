@@ -1,7 +1,9 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from api.database import get_pool, close_pool
-from api.routers import metrics  
+from api.routers import metrics
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -16,20 +18,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.include_router(metrics.router)       
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
 
-@app.get("/")
-async def root():
-    return {
-        "name": "SaaS Metrics API",
-        "version": "1.0.0",
-        "endpoints": [
-            "/metrics/mrr",
-            "/metrics/churn",
-            "/metrics/ltv",
-            "/metrics/arpu",
-            "/metrics/nrr",
-            "/metrics/mrr-movement",
-            "/customers",
-        ]
-    }
+app.include_router(metrics.router)
+
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

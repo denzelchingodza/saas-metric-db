@@ -1,39 +1,32 @@
-# SaaS Metrics & Subscription Analytics Database
+# SaaS Metrics DB
 
-A professional PostgreSQL project that models the full subscription lifecycle of a SaaS business and calculates the key metrics every real software company tracks MRR, ARR, churn, LTV, ARPU, cohort retention, and NRR.
+A PostgreSQL project that models the full subscription lifecycle of a SaaS business and calculates the metrics every real software company tracks: MRR, ARR, churn, LTV, ARPU, NRR, cohort retention, and MRR movement.
 
-Built with PostgreSQL · Docker · Python · FastAPI · GitHub Actions
+Served through a FastAPI backend and a live dashboard at `localhost:8000`.
 
----
+Built with PostgreSQL 16 · FastAPI · asyncpg · Docker · Python
 
-## What This Project Does
+## What It Does
 
-It models exactly how companies like Stripe, GitHub, and Notion and other companies that basically tracks users subscriptions track their (the company) revenue and customers from the moment someone signs up, through every payment they make, to the day they cancel. Then it answers the questions that actually matter to a business like:
+It models exactly how companies like Stripe, GitHub, and Notion track their subscription revenue from the moment a customer signs up, through every payment they make, to the day they cancel. The database answers the questions that actually matter:
 
-- How much recurring revenue do we make every month?
-- Which customers are most likely to leave?
-- Of everyone who signed up in January, how many are still paying in June?
-- How much is the average customer worth over their lifetime?
+How much recurring revenue does the business make every month? Which customers are most likely to leave? Of everyone who signed up in January, how many are still paying in June? How much is the average customer worth over their lifetime?
 
-These are the questions that data engineers, analytics engineers, and backend developers get asked to answer every day.
+These are the questions data engineers and analytics engineers get asked to answer every day, and this project shows how to answer them properly.
 
----
+## Tech Stack
 
-## Tech Stack Used
-
-| Layer | Technology | Why |
+| Layer | Technology | Purpose |
 |---|---|---|
-| Database | PostgreSQL 16 | Industry standard relational DB. Window functions, CTEs, advanced date math. |
-| Containerization | Docker + Docker Compose | Runs identically on any machine. One command to start everything. |
-| Seed Data | Python + Faker | Generates 100+ realistic customers, subscriptions, payments. |
-| API | FastAPI + asyncpg | Exposes metrics over HTTP. Auto generates Swagger docs. |
-| Version Control | Git (dev + main) | Clean commit history. Feature branches merged to main. |
-
----
+| Database | PostgreSQL 16 | Relational schema, window functions, CTEs, date arithmetic |
+| Containerization | Docker + Docker Compose | One command to run everything, identical on any machine |
+| Seed Data | Python + Faker | 100 realistic customers across plans, billing cycles, and subscription states |
+| API | FastAPI + asyncpg | HTTP endpoints for every metric with async database access |
+| Frontend | Vanilla HTML/CSS/JS | Live dashboard served from the same container |
 
 ## Database Schema
 
-Six tables. Each one models a distinct part of the business.
+Six tables, each modelling a distinct part of the business.
 
 ```
 customers          plans
@@ -46,11 +39,12 @@ customers          plans
                │
            payments
 
-events (standalone audit log links to customers + plans)
+events  (standalone audit log, linked to customers + plans)
 ```
 
 ### customers
-Who is paying. One row per customer (company or individual).
+
+One row per customer. Tracks who is paying.
 
 ```sql
 id           UUID PRIMARY KEY
@@ -61,18 +55,20 @@ created_at   TIMESTAMPTZ DEFAULT NOW()
 ```
 
 ### plans
-The pricing tiers. Basic, Pro, Business.
+
+The pricing tiers available to customers.
 
 ```sql
 id             UUID PRIMARY KEY
-name           VARCHAR NOT NULL
+name           VARCHAR NOT NULL       -- Basic, Pro, Enterprise
 price_monthly  NUMERIC(10,2)
-price_annual   NUMERIC(10,2)          -- usually discounted vs monthly * 12
+price_annual   NUMERIC(10,2)          -- discounted vs monthly * 12
 max_seats      INTEGER
 ```
 
 ### subscriptions
-The relationship between a customer and a plan over time. A customer can have multiple subscriptions across their lifetime (cancel + resubscribe).
+
+The relationship between a customer and a plan over time. A customer can hold multiple subscriptions across their lifetime if they cancel and resubscribe.
 
 ```sql
 id             UUID PRIMARY KEY
@@ -86,6 +82,7 @@ trial_ends_at  TIMESTAMPTZ            -- NULL if no trial
 ```
 
 ### invoices
+
 A bill generated for each billing period.
 
 ```sql
@@ -101,6 +98,7 @@ paid_at          TIMESTAMPTZ
 ```
 
 ### payments
+
 The actual money movement. Each payment settles an invoice.
 
 ```sql
@@ -114,7 +112,8 @@ processed_at    TIMESTAMPTZ
 ```
 
 ### events
-Immutable audit log. Every important action logged here.
+
+Immutable audit log. Every important customer action is recorded here.
 
 ```sql
 id           UUID PRIMARY KEY
@@ -123,168 +122,124 @@ event_type   VARCHAR                  -- signup | upgrade | downgrade | churn | 
 old_plan_id  UUID REFERENCES plans(id)
 new_plan_id  UUID REFERENCES plans(id)
 occurred_at  TIMESTAMPTZ
-metadata     JSONB                    -- flexible extra data
+metadata     JSONB
 ```
-
----
 
 ## Metrics Tracked
 
-| Metric | Formula | What It Tells You |
-|---|---|---|
-| **MRR** | Sum of all active monthly subscription values | Total recurring revenue per month |
-| **ARR** | MRR × 12 | Annual revenue projection |
-| **Churn Rate** | Customers lost ÷ Customers at period start | What % of customers left |
-| **LTV** | ARPU ÷ Monthly Churn Rate | How much one customer is worth over their lifetime |
-| **ARPU** | MRR ÷ Active Customers | Average revenue per user per month |
-| **NRR** | (MRR end − churned + expansion) ÷ MRR start | Are existing customers spending more over time? |
-| **Cohort Retention** | % of month-X signups still active at month X+N | Which customer groups stick around |
-| **MRR Movement** | New + Expansion − Contraction − Churned | Why MRR changed this month |
+| Metric | What It Measures |
+|---|---|
+| MRR | Total recurring revenue collected per month across all active subscriptions |
+| ARR | MRR multiplied by 12, the annual revenue projection |
+| Churn Rate | Percentage of customers who cancelled in a given month |
+| LTV | Total revenue earned per customer from first payment to last |
+| ARPU | Average revenue earned from each active subscriber per month |
+| NRR | Whether existing customers are spending more over time (above 100% means yes) |
+| Cohort Retention | What percentage of a signup cohort is still active at month 1, 3, 6, 12 |
+| MRR Movement | Breakdown of why MRR changed: new, expansion, contraction, churned |
 
----
+## API Endpoints
+
+| Method | Endpoint | Returns |
+|---|---|---|
+| GET | `/metrics/mrr` | Current MRR, ARR, and active subscription count |
+| GET | `/metrics/churn` | Monthly churn rate history |
+| GET | `/metrics/ltv` | Lifetime revenue per customer |
+| GET | `/metrics/arpu` | Average revenue per user, overall and by plan |
+| GET | `/metrics/nrr` | Net revenue retention per cohort month |
+| GET | `/metrics/mrr-movement` | Monthly breakdown of new, expansion, contraction, and churned MRR |
+
+Interactive docs available at `http://localhost:8000/docs`.
 
 ## Project Structure
 
 ```
 saas-metrics-db/
-├── docker-compose.yml          # Postgres + FastAPI services
-├── Dockerfile                  # FastAPI container
-├── .env.example                # Environment variable template
+├── docker-compose.yml               # PostgreSQL + FastAPI services
+├── Dockerfile                       # API container build
+├── .env.example                     # Environment variable template
 ├── .gitignore
 ├── README.md
+│
+├── frontend/
+│   └── index.html                   # Live metrics dashboard
 │
 ├── sql/
 │   ├── migrations/
 │   │   └── 001_initial_schema.sql   # All table definitions
 │   ├── queries/
-│   │   ├── mrr.sql                  # MRR + ARR calculations
-│   │   ├── churn.sql                # Monthly churn rate
-│   │   ├── ltv.sql                  # Customer lifetime value
-│   │   ├── arpu.sql                 # Average revenue per user
-│   │   ├── cohorts.sql              # Cohort retention analysis
-│   │   ├── mrr_movement.sql         # New / expansion / churn breakdown
-│   │   └── nrr.sql                  # Net revenue retention
+│   │   ├── mrr.sql
+│   │   ├── churn.sql
+│   │   ├── ltv.sql
+│   │   ├── arpu.sql
+│   │   ├── cohorts.sql
+│   │   ├── mrr_movement.sql
+│   │   └── nrr.sql
 │   └── views/
-│       └── active_subscriptions.sql # Reusable view
+│       └── active_subscriptions.sql
 │
 ├── seed/
-│   └── generate_seed.py            # Faker-based seed data generator
+│   └── generate_seed.py             # Faker-based data generator
 │
 └── api/
-    ├── main.py                     # FastAPI app
-    ├── database.py                 # asyncpg connection pool
+    ├── main.py                      # FastAPI app with CORS and static file serving
+    ├── database.py                  # asyncpg connection pool
     └── routers/
-        └── metrics.py              # /metrics/* endpoints
+        └── metrics.py               # All /metrics/* route handlers
 ```
-
----
 
 ## Getting Started
 
-### Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [Git](https://git-scm.com/)
-- Python 3.11+ (for seed script)
+**Prerequisites:** Docker Desktop, Git
 
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/denzelchingodza/saas-metrics-db.git
+git clone https://github.com/denzelchingodza/saas-metric-db.git
 cd saas-metrics-db
-git checkout dev
 ```
 
-### 2. Start the database
+### 2. Start everything
 
 ```bash
-docker compose up -d
+docker compose up --build
 ```
 
-This starts a PostgreSQL 16 container with the schema already applied and listening on port 5432.
+This builds the API container and starts both services. PostgreSQL initialises with the schema automatically on first run. The API is ready when you see `Application startup complete` in the logs.
 
-### 3. Seed with realistic data
+### 3. Open the dashboard
+
+Go to `http://localhost:8000` in your browser. The dashboard fetches all metrics from the API and renders them live.
+
+### 4. Seed the database (first time only)
 
 ```bash
 pip install faker psycopg2-binary
 python seed/generate_seed.py
 ```
 
-Generates ~100 customers across multiple plans, billing cycles, and subscription states — including upgrades, cancellations, and trials.
+Generates 100 customers across Basic, Pro, and Enterprise plans with a mix of monthly and annual billing cycles, upgrades, cancellations, trials, and refunds. Refresh the dashboard after seeding to see real numbers.
 
-### 4. Connect to the database
-
-```bash
-docker exec -it saas-metrics-db-db-1 psql -U admin -d saas_metrics
-```
-
-Or connect with any SQL client (TablePlus, DBeaver, pgAdmin) to `localhost:5432`.
-
-### 5. Run a metric query
+### 5. Connect directly to Postgres
 
 ```bash
-# Inside psql
-\i sql/queries/mrr.sql
+docker exec -it saas-metrics-db psql -U admin -d saas_metrics
 ```
 
-### 6. Start the API (optional)
-
-```bash
-docker compose up
-```
-
-Then open [http://localhost:8000/docs](http://localhost:8000/docs) for the interactive Swagger UI.
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/metrics/mrr` | Current MRR and ARR |
-| GET | `/metrics/churn` | Monthly churn rate history |
-| GET | `/metrics/ltv` | LTV per customer |
-| GET | `/metrics/arpu` | Average revenue per user |
-| GET | `/metrics/cohorts` | Cohort retention table |
-| GET | `/metrics/mrr-movement` | MRR movement breakdown |
-| GET | `/customers` | All customers with current plan |
-
----
-
-## Git Workflow
-
-```
-main   ──●────────────────────────────●──── (stable, always works)
-          \                          /
-dev        ●──●──●──●──●──●──●──●──●  (all active development)
-```
-
-All work happens on `dev`. When a phase is complete and tested, it is merged into `main`.
-
-**Commit message convention:**
-```
-feat: add customers table schema
-feat: add MRR calculation query
-fix: handle division by zero in churn rate query
-feat: seed 100 realistic customer records
-feat: add /metrics/mrr FastAPI endpoint
-```
-
----
+Or point any SQL client (TablePlus, DBeaver, pgAdmin) at `localhost:5432` with username `admin` and password `password`.
 
 ## Build Phases
 
-- [x] **Phase 1** — Project setup: Docker, Postgres, empty database
-- [ ] **Phase 2** — Schema: all 6 tables with constraints and indexes
-- [ ] **Phase 3** — Seed data: 100+ realistic records via Python Faker
-- [ ] **Phase 4** — Core metric queries: MRR, ARR, churn, ARPU, LTV
-- [ ] **Phase 5** — Advanced queries: cohort analysis, MRR movement, NRR
-- [ ] **Phase 6** — FastAPI layer: HTTP endpoints for every metric
-- [ ] **Phase 7** — Polish: views, indexes, performance tuning, final README
-
----
+- [x] Phase 1 — Project setup: Docker, Postgres, empty database
+- [x] Phase 2 — Schema: all 6 tables with constraints and indexes
+- [x] Phase 3 — Seed data: 100 realistic records via Python Faker
+- [x] Phase 4 — Core metric queries: MRR, ARR, churn, ARPU, LTV
+- [x] Phase 5 — Advanced queries: cohort analysis, MRR movement, NRR
+- [x] Phase 6 — FastAPI layer: HTTP endpoints for every metric + live dashboard
+- [ ] Phase 7 — Polish: database views, performance indexes, final tuning
 
 ## Why I Built This
 
-I wanted a portfolio project that goes beyond a basic CRUD database and shows real business logic the kind of SQL and data modelling that actually gets used in production. SaaS metrics are something every software company cares about. Building this taught me normalized schema design, advanced SQL (window functions, CTEs, date arithmetic), Docker containerization, and how to expose database results through a clean API.
+I wanted a portfolio project that goes beyond basic CRUD and shows real business logic — the kind of SQL and data modelling that actually gets used in production. SaaS metrics are something every software company cares about. Building this covered normalised schema design, advanced SQL (window functions, CTEs, date arithmetic), Docker containerisation, and exposing database results through a clean async API with a frontend that consumes it.
 
----
+Built by Denzel · 2026
