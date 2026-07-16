@@ -240,6 +240,6 @@ Or point any SQL client (TablePlus, DBeaver, pgAdmin) at `localhost:5432` with u
 
 ## Why I Built This
 
-I wanted a portfolio project that goes beyond basic CRUD and shows real business logic — the kind of SQL and data modelling that actually gets used in production. SaaS metrics are something every software company cares about. Building this covered normalised schema design, advanced SQL (window functions, CTEs, date arithmetic), Docker containerisation, and exposing database results through a clean async API with a frontend that consumes it.
+I wanted a portfolio project that goes beyond basic CRUD and shows real business logic the kind of SQL and data modelling that actually gets used in production. SaaS metrics are something every software company cares about. Building this covered normalised schema design, advanced SQL (window functions, CTEs, date arithmetic), Docker containerisation, and exposing database results through a clean async API with a frontend that consumes it.
 
 Built by Denzel · 2026
