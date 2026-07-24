@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS customers (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_customers_country ON customers(country);
-CREATE INDEX idx_customers_created_at ON customers(created_at);
+CREATE INDEX IF NOT EXISTSidx_customers_country ON customers(country);
+CREATE INDEX IF NOT EXISTSidx_customers_created_at ON customers(created_at);
 
 -- PLANS-----------------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS plans(
@@ -43,9 +43,9 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     trial_ends_at  TIMESTAMPTZ
 );
 
-CREATE INDEX idx_subscriptions_customer_id ON subscriptions(customer_id);
-CREATE INDEX idx_subscriptions_status      ON subscriptions(status);
-CREATE INDEX idx_subscriptions_started_at  ON subscriptions(started_at);
+CREATE INDEX IF NOT EXISTSidx_subscriptions_customer_id ON subscriptions(customer_id);
+CREATE INDEX IF NOT EXISTSidx_subscriptions_status      ON subscriptions(status);
+CREATE INDEX IF NOT EXISTSidx_subscriptions_started_at  ON subscriptions(started_at);
 
 --INVOICES-------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS invoices(
@@ -61,10 +61,10 @@ CREATE TABLE IF NOT EXISTS invoices(
     paid_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW() 
 );
-CREATE INDEX idx_invoices_customer_id     ON invoices(customer_id);
-CREATE INDEX idx_invoices_subscription_id ON invoices(subscription_id);
-CREATE INDEX idx_invoices_status          ON invoices(status);
-CREATE INDEX idx_invoices_period_start    ON invoices(period_start);
+CREATE INDEX IF NOT EXISTSidx_invoices_customer_id     ON invoices(customer_id);
+CREATE INDEX IF NOT EXISTSidx_invoices_subscription_id ON invoices(subscription_id);
+CREATE INDEX IF NOT EXISTSidx_invoices_status          ON invoices(status);
+CREATE INDEX IF NOT EXISTSidx_invoices_period_start    ON invoices(period_start);
 
 --PAYMENTS-----------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS payments (
@@ -79,10 +79,10 @@ CREATE TABLE IF NOT EXISTS payments (
     processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()  
 
 );
-CREATE INDEX idx_payments_customer_id  ON payments(customer_id);
-CREATE INDEX idx_payments_invoice_id   ON payments(invoice_id);
-CREATE INDEX idx_payments_status       ON payments(status);
-CREATE INDEX idx_payments_processed_at ON payments(processed_at);
+CREATE INDEX IF NOT EXISTSidx_payments_customer_id  ON payments(customer_id);
+CREATE INDEX IF NOT EXISTSidx_payments_invoice_id   ON payments(invoice_id);
+CREATE INDEX IF NOT EXISTSidx_payments_status       ON payments(status);
+CREATE INDEX IF NOT EXISTSidx_payments_processed_at ON payments(processed_at);
 
 --EVENTS---------------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS events (
@@ -95,6 +95,6 @@ CREATE TABLE IF NOT EXISTS events (
     occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     metadata JSONB 
 );
-CREATE INDEX idx_events_customer_id ON events(customer_id);
-CREATE INDEX idx_events_event_type  ON events(event_type);
-CREATE INDEX idx_events_occurred_at ON events(occurred_at);
+CREATE INDEX IF NOT EXISTSidx_events_customer_id ON events(customer_id);
+CREATE INDEX IF NOT EXISTSidx_events_event_type  ON events(event_type);
+CREATE INDEX IF NOT EXISTSidx_events_occurred_at ON events(occurred_at);
