@@ -3,97 +3,186 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Metrics Tracker</title>
+  <title>SaaS Metrics DB</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg: #f5f5f3;
+      --surface: #ffffff;
+      --border: #e4e4e2;
+      --border-strong: #cfcfcc;
+      --text: #1a1a18;
+      --text-2: #6b6b68;
+      --text-3: #9b9b98;
+      --blue: #2563eb;
+      --blue-bg: #eff6ff;
+      --green: #16a34a;
+      --green-bg: #f0fdf4;
+      --amber: #d97706;
+      --amber-bg: #fffbeb;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+    }
+
     body {
-      background: #0a0a0a;
-      color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif;
       min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
     }
 
-    .mcard { background: #181818; border-radius: 6px; padding: 1.25rem; }
-
-    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-
-    .label {
-      font-size: 10px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 0.75rem;
-    }
-
-    .big-num { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-
-    .sub { font-size: 11px; margin-bottom: 0.625rem; }
-
-    .desc { font-size: 11px; color: #555; line-height: 1.55; }
-
-    .mono { font-family: 'Courier New', Courier, monospace; }
-
-    .ep-link {
-      display: block;
-      font-size: 12px;
-      color: #666;
-      font-family: 'Courier New', Courier, monospace;
-      text-decoration: none;
-      margin-bottom: 7px;
-    }
-    .ep-link:hover { color: #aaa; }
-
-    .gh-link {
-      display: inline-flex;
+    .nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 52px;
+      display: flex;
       align-items: center;
-      gap: 7px;
-      font-size: 12px;
-      color: #888;
-      text-decoration: none;
-      padding: 7px 14px;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 5px;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-    .gh-link:hover { color: #ccc; border-color: rgba(255,255,255,0.28); }
+    .nav-logo { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.01em; }
+    .nav-logo span { color: var(--text-3); font-weight: 400; }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-link { font-size: 12px; color: var(--text-2); text-decoration: none; }
+    .nav-link:hover { color: var(--text); }
 
-    .progress-bar { height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; margin-bottom: 7px; }
-    .progress-fill { height: 100%; background: #46d369; border-radius: 2px; }
+    .main { max-width: 880px; margin: 0 auto; padding: 40px 24px 80px; }
 
+    .hero { margin-bottom: 40px; }
+    .eyebrow { font-size: 11px; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+    .hero-num { font-size: 48px; font-weight: 500; letter-spacing: -0.02em; color: var(--text); margin-bottom: 8px; min-width: 220px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12px; color: var(--green); background: var(--green-bg);
+      padding: 3px 9px; border-radius: 99px; margin-bottom: 12px;
+    }
+    .hero-desc { font-size: 13px; color: var(--text-2); margin-bottom: 20px; max-width: 480px; line-height: 1.65; }
+    #heroC { width: 100%; height: 80px; display: block; }
+    .chart-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-3); margin-top: 6px; margin-bottom: 36px; }
+
+    .section-label {
+      font-size: 11px; color: var(--text-3); letter-spacing: 0.06em;
+      text-transform: uppercase; margin-bottom: 12px;
+      padding-bottom: 10px; border-bottom: 1px solid var(--border);
+    }
+
+    .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 32px; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      position: relative;
+    }
+    .card:hover { border-color: var(--border-strong); box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+    .card-arrow {
+      position: absolute; top: 14px; right: 14px;
+      font-size: 11px; color: var(--border-strong);
+      transition: color 0.15s;
+    }
+    .card:hover .card-arrow { color: var(--text-3); }
+    .card-label { font-size: 11px; color: var(--text-3); letter-spacing: 0.04em; margin-bottom: 8px; padding-right: 16px; }
+    .card-val { font-size: 26px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+    .card-tag { font-size: 11px; color: var(--green); }
+    .card-tag.warn { color: var(--amber); }
+    .card-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .card-hint { font-size: 11px; color: var(--text-3); margin-top: 8px; line-height: 1.5; }
+
+    .pbar { height: 2px; background: var(--border); border-radius: 99px; margin-top: 8px; }
+    .pfill { height: 100%; background: var(--green); border-radius: 99px; transition: width 1s ease; }
+
+    .hm-section { margin-bottom: 40px; }
+    .hm-desc { font-size: 12px; color: var(--text-2); margin-bottom: 14px; line-height: 1.65; }
     .hm-table { border-collapse: collapse; width: 100%; table-layout: fixed; }
-    .hm-th { font-size: 10px; font-weight: 400; color: #444; text-align: center; padding: 0 2px 8px; }
-    .hm-label { font-size: 11px; color: #555; padding: 2px 8px 2px 0; font-family: 'Courier New', Courier, monospace; white-space: nowrap; vertical-align: middle; }
+    .hm-th { font-size: 10px; color: var(--text-3); text-align: center; padding: 0 2px 8px; font-weight: 400; }
+    .hm-th-left { text-align: left; }
+    .hm-label { font-size: 11px; color: var(--text-2); padding: 2px 10px 2px 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .hm-cell-wrap { padding: 2px; }
-    .hm-cell { border-radius: 4px; padding: 9px 4px; text-align: center; font-size: 12px; font-weight: 600; }
+    .hm-cell { border-radius: 4px; padding: 8px 4px; text-align: center; font-size: 11px; font-weight: 500; }
 
-    /* Loading skeleton */
     .skeleton {
-      background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
+      background: linear-gradient(90deg, #efefed 25%, #e6e6e4 50%, #efefed 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
       border-radius: 4px;
-      color: transparent;
+      color: transparent !important;
       user-select: none;
     }
-    @keyframes shimmer {
-      0%   { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    #loadingBar {
+      position: fixed; top: 0; left: 0; height: 2px;
+      background: var(--blue); width: 0%;
+      transition: width 0.4s ease; z-index: 999;
     }
 
-    /* Loading overlay */
-    #loadingBar {
-      position: fixed;
-      top: 0; left: 0;
-      height: 2px;
-      background: #E50914;
-      width: 0%;
-      transition: width 0.4s ease;
-      z-index: 999;
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.2); z-index: 100;
+      align-items: flex-end; justify-content: center; padding: 0 16px 16px;
     }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border-radius: 12px;
+      width: 100%; max-width: 860px; max-height: 72vh;
+      overflow: hidden; display: flex; flex-direction: column;
+      border: 1px solid var(--border);
+    }
+    .modal-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .modal-title { font-size: 14px; font-weight: 500; color: var(--text); }
+    .modal-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .modal-close {
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      padding: 4px 12px; font-size: 12px; color: var(--text-2); cursor: pointer; flex-shrink: 0;
+    }
+    .modal-close:hover { background: var(--bg); }
+    .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .data-table th {
+      text-align: left; font-size: 10px; color: var(--text-3);
+      letter-spacing: 0.05em; text-transform: uppercase;
+      font-weight: 400; padding: 0 12px 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .data-table td {
+      padding: 9px 12px 9px 0; color: var(--text);
+      border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table td.muted { color: var(--text-3); }
+
+    .pill { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 99px; font-weight: 500; }
+    .pill-g { background: var(--green-bg); color: var(--green); }
+    .pill-a { background: var(--amber-bg); color: var(--amber); }
+    .pill-r { background: var(--red-bg); color: var(--red); }
+    .pill-b { background: var(--blue-bg); color: var(--blue); }
+
+    .footer { background: var(--surface); border-top: 1px solid var(--border); padding: 32px 24px; }
+    .footer-inner { max-width: 880px; margin: 0 auto; }
+    .footer-top { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 24px; }
+    .footer-label { font-size: 10px; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; }
+    .ep-link { display: block; font-size: 12px; color: var(--text-2); font-family: monospace; text-decoration: none; margin-bottom: 6px; }
+    .ep-link:hover { color: var(--blue); }
+    .stack-item { font-size: 12px; color: var(--text-2); font-family: monospace; margin-bottom: 6px; }
+    .stack-green { color: var(--green); }
+    .footer-bottom { border-top: 1px solid var(--border); padding-top: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .footer-meta { font-size: 11px; color: var(--text-3); }
+    .gh-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); text-decoration: none; padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; }
+    .gh-btn:hover { border-color: var(--border-strong); color: var(--text); }
 
     @media (max-width: 640px) {
       .grid3 { grid-template-columns: 1fr; }
-      .footer-grid { grid-template-columns: 1fr !important; }
+      .footer-top { grid-template-columns: 1fr; }
+      .hero-num { font-size: 36px; }
     }
   </style>
 </head>
@@ -101,118 +190,99 @@
 
 <div id="loadingBar"></div>
 
-<!-- Nav -->
-<div style="border-bottom: 1px solid rgba(255,255,255,0.07); padding: 1.25rem 2.5rem;">
-  <div style="max-width: 900px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;">
-    <span style="font-size: 15px; font-weight: 700; letter-spacing: 0.07em; color: #E50914;">METRICS</span>
-    <span style="font-size: 11px; color: #555;">Subscription Analytics</span>
+<nav class="nav">
+  <div class="nav-logo">SaaS Metrics <span>/ Analytics</span></div>
+  <div class="nav-right">
+    <span style="font-size:12px;color:var(--text-3)">100 customers · 520 invoices</span>
+    <a class="nav-link" href="/docs" target="_blank">API docs ↗</a>
   </div>
-</div>
+</nav>
 
-<!-- Hero -->
-<div style="padding: 3rem 2.5rem 2rem;">
-  <div style="max-width: 900px; margin: 0 auto;">
-    <div style="font-size: 10px; color: #E50914; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 0.625rem;">Featured</div>
-    <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.5rem;">Monthly Recurring Revenue</div>
-    <div style="display: flex; align-items: flex-end; gap: 12px; margin-bottom: 0.5rem;">
-      <div id="mrrHero" style="font-size: 52px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; min-width: 180px;" class="skeleton">$00,000</div>
-      <div id="growthLabel" style="font-size: 13px; color: #46d369; font-weight: 500; padding-bottom: 9px; opacity: 0; transition: opacity 0.4s;"></div>
-    </div>
-    <p style="font-size: 13px; color: #888; line-height: 1.7; margin-bottom: 1.5rem; max-width: 500px;">
-      Eight months of subscription data tracked in real time. Revenue climbed from $7,200 in December 2024 to $12,480 today across 100 simulated customers on three plans.
-    </p>
-    <canvas id="heroC" height="80" style="width: 100%; display: block; opacity: 0; transition: opacity 0.4s;"></canvas>
-    <div style="display: flex; justify-content: space-between; font-size: 10px; color: #444; margin-top: 6px;">
+<div class="main">
+
+  <div class="hero">
+    <div class="eyebrow">Monthly recurring revenue</div>
+    <div class="hero-num skeleton" id="mrrHero">$43,346</div>
+    <div class="hero-badge" id="growthLabel" style="opacity:0;transition:opacity 0.4s"></div>
+    <p class="hero-desc">Eight months of subscription data across 100 simulated customers on Basic, Pro, and Business plans. Click any card to see the full breakdown.</p>
+    <canvas id="heroC" style="opacity:0;transition:opacity 0.4s"></canvas>
+    <div class="chart-labels">
       <span>Dec 2024</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul 2025</span>
     </div>
   </div>
-</div>
 
-<!-- Revenue -->
-<div style="padding: 0 2.5rem 2rem;">
-  <div style="max-width: 900px; margin: 0 auto;">
-    <div style="font-size: 12px; font-weight: 600; color: #e5e5e5; margin-bottom: 0.875rem;">Revenue</div>
-    <div class="grid3">
-      <div class="mcard">
-        <div class="label">MRR</div>
-        <div class="big-num skeleton" id="mrrCard" style="min-width: 80px;">$00,000</div>
-        <div class="sub" id="mrrSub" style="color: #888; min-height: 16px;"></div>
-        <div class="desc">Total subscription payments collected per month</div>
-      </div>
-      <div class="mcard">
-        <div class="label">ARR</div>
-        <div class="big-num skeleton" id="arrCard" style="min-width: 100px;">$000,000</div>
-        <div class="sub" style="color: #888; min-height: 16px;">Annualized run rate</div>
-        <div class="desc">MRR times 12, the annual revenue if nothing changes</div>
-      </div>
-      <div class="mcard">
-        <div class="label">ARPU</div>
-        <div class="big-num skeleton" id="arpuCard" style="min-width: 60px;">$000</div>
-        <div class="sub" style="color: #888; min-height: 16px;">Per customer per month</div>
-        <div class="desc">Average revenue earned from each active subscriber</div>
-      </div>
+  <div class="section-label">Revenue</div>
+  <div class="grid3">
+    <div class="card" onclick="openModal('mrr')">
+      <span class="card-arrow">↗</span>
+      <div class="card-label">MRR</div>
+      <div class="card-val skeleton" id="mrrCard">$43,346</div>
+      <div class="card-tag" id="mrrSub"></div>
+      <div class="card-hint">Total subscription payments collected per month</div>
+    </div>
+    <div class="card" onclick="openModal('arr')">
+      <span class="card-arrow">↗</span>
+      <div class="card-label">ARR</div>
+      <div class="card-val skeleton" id="arrCard">$520,148</div>
+      <div class="card-sub">Annualized run rate</div>
+      <div class="card-hint">MRR × 12, the annual revenue if nothing changes</div>
+    </div>
+    <div class="card" onclick="openModal('arpu')">
+      <span class="card-arrow">↗</span>
+      <div class="card-label">ARPU</div>
+      <div class="card-val skeleton" id="arpuCard">$563</div>
+      <div class="card-sub">Per active subscriber</div>
+      <div class="card-hint">Average revenue earned from each active subscriber</div>
     </div>
   </div>
-</div>
 
-<!-- Customer Health -->
-<div style="padding: 0 2.5rem 2rem;">
-  <div style="max-width: 900px; margin: 0 auto;">
-    <div style="font-size: 12px; font-weight: 600; color: #e5e5e5; margin-bottom: 0.875rem;">Customer health</div>
-    <div class="grid3">
-      <div class="mcard">
-        <div class="label">Churn rate</div>
-        <div class="big-num skeleton" id="churnCard" style="min-width: 60px;">0.0%</div>
-        <div class="sub" id="churnSub" style="color: #e87c03; min-height: 16px;"></div>
-        <div class="progress-bar"><div class="progress-fill" id="churnBar" style="width: 0%;"></div></div>
-        <div class="desc" id="churnDesc"></div>
-      </div>
-      <div class="mcard">
-        <div class="label">Lifetime value</div>
-        <div class="big-num skeleton" id="ltvCard" style="min-width: 80px;">$0,000</div>
-        <div class="sub" style="color: #888; min-height: 16px;">Average across all plans</div>
-        <div class="desc">Total revenue earned per customer from first payment to last</div>
-      </div>
-      <div class="mcard">
-        <div class="label">Net Revenue Retention</div>
-        <div class="big-num skeleton" id="nrrCard" style="color: #46d369; min-width: 60px;">000%</div>
-        <div class="sub" id="nrrSub" style="color: #46d369; min-height: 16px;"></div>
-        <div class="desc">Above 100% means existing customers grow revenue on their own</div>
-      </div>
+  <div class="section-label">Customer health</div>
+  <div class="grid3">
+    <div class="card" onclick="openModal('churn')">
+      <span class="card-arrow">↗</span>
+      <div class="card-label">Churn rate</div>
+      <div class="card-val skeleton" id="churnCard">0%</div>
+      <div class="card-tag" id="churnSub"></div>
+      <div class="pbar"><div class="pfill" id="churnBar" style="width:0%"></div></div>
+      <div class="card-hint" id="churnDesc"></div>
+    </div>
+    <div class="card" onclick="openModal('ltv')">
+      <span class="card-arrow">↗</span>
+      <div class="card-label">Lifetime value</div>
+      <div class="card-val skeleton" id="ltvCard">$16,607</div>
+      <div class="card-sub">Average across all plans</div>
+      <div class="card-hint">Total revenue earned per customer from first payment to last</div>
+    </div>
+    <div class="card" onclick="openModal('nrr')">
+      <span class="card-arrow">↗</span>
+      <div class="card-label">Net revenue retention</div>
+      <div class="card-val skeleton" id="nrrCard">100%</div>
+      <div class="card-tag" id="nrrSub"></div>
+      <div class="card-hint">Above 100% means existing customers grow revenue on their own</div>
     </div>
   </div>
-</div>
 
-<!-- Retention heatmap -->
-<div style="padding: 0 2.5rem 2.5rem;">
-  <div style="max-width: 900px; margin: 0 auto;">
-    <div style="font-size: 12px; font-weight: 600; color: #e5e5e5; margin-bottom: 4px;">Retention over time</div>
-    <p style="font-size: 12px; color: #555; margin-bottom: 1rem; line-height: 1.7;">
-      Each row is a group of customers who signed up in the same month. Columns show what percentage is still subscribed later. An empty cell means that window has not arrived yet for that group.
-    </p>
+  <div class="section-label">Retention over time</div>
+  <div class="hm-section">
+    <p class="hm-desc">Each row is a group of customers who signed up in the same month. Columns show what percentage is still subscribed at 1, 3, 6, and 12 months. Empty cells mean that window has not arrived yet for that cohort.</p>
     <div id="heatmap"></div>
   </div>
+
 </div>
 
-<!-- Footer -->
-<div style="background: #0a0a0a; border-top: 1px solid rgba(255,255,255,0.06); padding: 2.5rem 2.5rem 2rem;">
-  <div style="max-width: 900px; margin: 0 auto;">
-    <span style="font-size: 14px; font-weight: 700; letter-spacing: 0.07em; color: #E50914;">METRICS</span>
-    <p style="font-size: 12px; color: #555; margin-top: 6px; margin-bottom: 2rem; line-height: 1.65; max-width: 420px;">
-      A subscription analytics engine that tracks how SaaS businesses make and lose money, powered by PostgreSQL, FastAPI, and Docker.
-    </p>
-
-    <div class="footer-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-top">
       <div>
-        <div style="font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 0.875rem;">Tech stack</div>
-        <div class="mono desc" style="margin-bottom: 6px;">PostgreSQL 16</div>
-        <div class="mono desc" style="margin-bottom: 6px;">FastAPI</div>
-        <div class="mono desc" style="margin-bottom: 6px;">Docker</div>
-        <div class="mono desc" style="margin-bottom: 6px;">asyncpg</div>
-        <div class="mono" style="font-size: 12px; color: #46d369;">pytest  10 tests passing</div>
+        <div class="footer-label">Tech stack</div>
+        <div class="stack-item">PostgreSQL 16</div>
+        <div class="stack-item">FastAPI</div>
+        <div class="stack-item">asyncpg</div>
+        <div class="stack-item">Docker</div>
+        <div class="stack-item stack-green">pytest — 10 tests passing</div>
       </div>
       <div>
-        <div style="font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 0.875rem;">API endpoints</div>
+        <div class="footer-label">API endpoints</div>
         <a class="ep-link" href="/metrics/mrr" target="_blank">GET /metrics/mrr ↗</a>
         <a class="ep-link" href="/metrics/churn" target="_blank">GET /metrics/churn ↗</a>
         <a class="ep-link" href="/metrics/ltv" target="_blank">GET /metrics/ltv ↗</a>
@@ -221,24 +291,33 @@
         <a class="ep-link" href="/metrics/mrr-movement" target="_blank">GET /metrics/mrr-movement ↗</a>
       </div>
     </div>
-
-    <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-      <div>
-        <div style="font-size: 11px; color: #333; margin-bottom: 4px;">SaaS Metrics DB &nbsp; 100 customers &nbsp; 520 invoices &nbsp; 7 SQL queries &nbsp; 2026</div>
-        <div style="font-size: 11px; color: #333;">Built by Denzel</div>
-      </div>
-      <a class="gh-link" href="https://github.com/denzelchingodza/saas-metric-db" target="_blank">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="#888" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
-        </svg>
+    <div class="footer-bottom">
+      <div class="footer-meta">SaaS Metrics DB &nbsp;·&nbsp; 100 customers &nbsp;·&nbsp; 520 invoices &nbsp;·&nbsp; 7 SQL queries &nbsp;·&nbsp; Built by Denzel &nbsp;·&nbsp; 2026</div>
+      <a class="gh-btn" href="https://github.com/denzelchingodza/saas-metric-db" target="_blank">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
         View on GitHub
       </a>
     </div>
+  </div>
+</footer>
+
+<!-- Detail drawer -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-sub" id="modalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">Close</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
 
 <script>
   const API = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
+  let rawData = {};
 
   const cohorts = [
     { label: 'Dec 24', vals: [100, 79, 63, 48, 34] },
@@ -252,11 +331,11 @@
   ];
 
   function cellColor(v) {
-    if (v === null) return { bg: 'rgba(255,255,255,0.03)', color: 'transparent' };
-    if (v >= 80)   return { bg: '#1D9E75', color: '#E1F5EE' };
-    if (v >= 60)   return { bg: '#157a5a', color: '#9FE1CB' };
-    if (v >= 40)   return { bg: '#0e5c42', color: '#5DCAA5' };
-    return               { bg: '#7a4d0a', color: '#FAC775' };
+    if (v === null) return { bg: '#f5f5f3', color: 'transparent' };
+    if (v >= 80)   return { bg: '#dcfce7', color: '#16a34a' };
+    if (v >= 60)   return { bg: '#d1fae5', color: '#059669' };
+    if (v >= 40)   return { bg: '#fef9c3', color: '#ca8a04' };
+    return               { bg: '#ffedd5', color: '#c2410c' };
   }
 
   function buildHeatmap() {
@@ -267,6 +346,7 @@
     const hrow = thead.insertRow();
     const th0 = document.createElement('th');
     th0.style.width = '58px';
+    th0.className = 'hm-th hm-th-left';
     hrow.appendChild(th0);
     ['Start', '1 month', '3 months', '6 months', '1 year'].forEach(label => {
       const th = document.createElement('th');
@@ -298,11 +378,15 @@
   function drawChart(series) {
     const cv = document.getElementById('heroC');
     cv.width = cv.offsetWidth;
-    const W = cv.width, H = 80, ctx = cv.getContext('2d');
-    const top = 10, innerH = H - top, vMin = 6000, vMax = 14000;
+    const W = cv.width, H = 80;
+    if (!W) return;
+    const ctx = cv.getContext('2d');
+    const top = 8, innerH = H - top - 4;
+    const vMin = Math.min(...series) * 0.9;
+    const vMax = Math.max(...series) * 1.05;
     const pts = series.map((v, i) => ({
       x: (i / (series.length - 1)) * W,
-      y: top + innerH - ((v - vMin) / (vMax - vMin)) * innerH,
+      y: top + innerH - ((v - vMin) / (vMax - vMin || 1)) * innerH,
     }));
     ctx.clearRect(0, 0, W, H);
     ctx.beginPath();
@@ -311,19 +395,21 @@
     ctx.lineTo(pts[pts.length - 1].x, H);
     ctx.closePath();
     const grad = ctx.createLinearGradient(0, top, 0, H);
-    grad.addColorStop(0, 'rgba(229,9,20,0.22)');
-    grad.addColorStop(1, 'rgba(229,9,20,0)');
+    grad.addColorStop(0, 'rgba(37,99,235,0.10)');
+    grad.addColorStop(1, 'rgba(37,99,235,0)');
     ctx.fillStyle = grad;
     ctx.fill();
     ctx.beginPath();
     pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-    ctx.strokeStyle = '#E50914';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth = 1.5;
     ctx.lineJoin = 'round';
     ctx.stroke();
     const lp = pts[pts.length - 1];
-    ctx.beginPath(); ctx.arc(lp.x, lp.y, 4, 0, Math.PI * 2); ctx.fillStyle = '#E50914'; ctx.fill();
-    ctx.beginPath(); ctx.arc(lp.x, lp.y, 4, 0, Math.PI * 2); ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(lp.x, lp.y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#2563eb'; ctx.fill();
+    ctx.beginPath(); ctx.arc(lp.x, lp.y, 3.5, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
   }
 
   function animCount(id, target, prefix, suffix, duration, removeSkeleton) {
@@ -345,9 +431,157 @@
     requestAnimationFrame(step);
   }
 
-  function setProgress(pct) {
-    document.getElementById('loadingBar').style.width = pct + '%';
+  function fmt$(n) { return '$' + Math.round(n).toLocaleString(); }
+  function fmtPct(n) { return parseFloat(n).toFixed(1) + '%'; }
+  function fmtMonth(s) {
+    if (!s) return '';
+    const d = new Date(s);
+    return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
   }
+
+  function openModal(type) {
+    const configs = {
+      mrr: {
+        title: 'MRR movement',
+        sub: 'Monthly breakdown of how recurring revenue changed',
+        render: renderMovement,
+      },
+      arr: {
+        title: 'Annual recurring revenue',
+        sub: 'Annualized projection based on current MRR',
+        render: renderArr,
+      },
+      arpu: {
+        title: 'ARPU by plan',
+        sub: 'Average revenue per user broken down by subscription plan',
+        render: renderArpu,
+      },
+      churn: {
+        title: 'Monthly churn history',
+        sub: 'Cancellations and churn rate by month',
+        render: renderChurn,
+      },
+      ltv: {
+        title: 'Customer lifetime value',
+        sub: 'Top 20 customers ranked by total revenue generated',
+        render: renderLtv,
+      },
+      nrr: {
+        title: 'Net revenue retention',
+        sub: 'Revenue retained from existing customers by cohort',
+        render: renderNrr,
+      },
+    };
+    const cfg = configs[type];
+    if (!cfg) return;
+    document.getElementById('modalTitle').textContent = cfg.title;
+    document.getElementById('modalSub').textContent = cfg.sub;
+    document.getElementById('modalBody').innerHTML = cfg.render();
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function renderMovement() {
+    const rows = rawData.movementRows || [];
+    if (!rows.length) return '<p style="color:var(--text-3);font-size:13px;padding:8px 0">No data available.</p>';
+    return `<table class="data-table">
+      <thead><tr>
+        <th>Month</th><th>New MRR</th><th>Expansion</th><th>Contraction</th><th>Churned</th><th>Net change</th>
+      </tr></thead>
+      <tbody>${rows.map(r => {
+        const net = Number(r.net_new_mrr ?? 0);
+        return `<tr>
+          <td>${fmtMonth(r.month)}</td>
+          <td>${fmt$(r.new_mrr ?? 0)}</td>
+          <td>${fmt$(r.expansion_mrr ?? 0)}</td>
+          <td class="muted">${fmt$(r.contraction_mrr ?? 0)}</td>
+          <td class="muted">${fmt$(r.churned_mrr ?? 0)}</td>
+          <td style="color:${net >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:500">${net >= 0 ? '+' : ''}${fmt$(net)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+
+  function renderArr() {
+    const mrr = rawData.mrr || 0;
+    const arr = rawData.arr || mrr * 12;
+    return `<table class="data-table">
+      <thead><tr><th>Metric</th><th>Value</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Current MRR</td><td>${fmt$(mrr)}</td><td class="muted">This month</td></tr>
+        <tr><td>ARR projection</td><td style="font-weight:500">${fmt$(arr)}</td><td class="muted">MRR × 12</td></tr>
+        <tr><td>Daily run rate</td><td>${fmt$(mrr / 30)}</td><td class="muted">MRR ÷ 30</td></tr>
+      </tbody>
+    </table>`;
+  }
+
+  function renderArpu() {
+    const rows = rawData.arpuRows || [];
+    if (!rows.length) return '<p style="color:var(--text-3);font-size:13px;padding:8px 0">No data available.</p>';
+    return `<table class="data-table">
+      <thead><tr><th>Plan</th><th>Customers</th><th>ARPU</th></tr></thead>
+      <tbody>${rows.map(r => `<tr>
+        <td><span class="pill ${r.plan === 'Overall' ? 'pill-b' : r.plan === 'Business' ? 'pill-g' : 'pill-a'}">${r.plan}</span></td>
+        <td>${r.customers}</td>
+        <td style="font-weight:500">${fmt$(r.arpu ?? 0)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  function renderChurn() {
+    const rows = rawData.churnRows || [];
+    if (!rows.length) return '<p style="color:var(--text-3);font-size:13px;padding:8px 0">No data available.</p>';
+    return `<table class="data-table">
+      <thead><tr><th>Month</th><th>New subscribers</th><th>Cancelled</th><th>Churn rate</th></tr></thead>
+      <tbody>${[...rows].reverse().map(r => {
+        const rate = parseFloat(r.churn_rate_pct ?? 0);
+        return `<tr>
+          <td>${fmtMonth(r.month)}</td>
+          <td>${r.new_subs}</td>
+          <td>${r.churned}</td>
+          <td style="color:${rate > 5 ? 'var(--red)' : rate > 2 ? 'var(--amber)' : 'var(--green)'};font-weight:500">${fmtPct(rate)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+
+  function renderLtv() {
+    const rows = rawData.ltvRows || [];
+    if (!rows.length) return '<p style="color:var(--text-3);font-size:13px;padding:8px 0">No data available.</p>';
+    return `<table class="data-table">
+      <thead><tr><th>Customer</th><th>Country</th><th>Plan</th><th>Status</th><th>Months</th><th>Lifetime revenue</th></tr></thead>
+      <tbody>${rows.map(r => `<tr>
+        <td style="font-weight:500">${r.name}</td>
+        <td class="muted">${r.country}</td>
+        <td>${r.plan}</td>
+        <td><span class="pill ${r.status === 'active' ? 'pill-g' : 'pill-r'}">${r.status}</span></td>
+        <td class="muted">${r.months_as_customer}</td>
+        <td style="font-weight:500">${fmt$(r.lifetime_revenue ?? 0)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  function renderNrr() {
+    const rows = rawData.nrrRows || [];
+    if (!rows.length) return '<p style="color:var(--text-3);font-size:13px;padding:8px 0">No data available.</p>';
+    return `<table class="data-table">
+      <thead><tr><th>Cohort month</th><th>Starting MRR</th><th>Retained MRR</th><th>NRR</th></tr></thead>
+      <tbody>${rows.map(r => {
+        const nrr = parseFloat(r.nrr_pct ?? 0);
+        return `<tr>
+          <td>${fmtMonth(r.month)}</td>
+          <td>${fmt$(r.starting_mrr ?? 0)}</td>
+          <td>${fmt$(r.retained_mrr ?? 0)}</td>
+          <td style="color:${nrr >= 100 ? 'var(--green)' : nrr >= 80 ? 'var(--amber)' : 'var(--red)'};font-weight:500">${fmtPct(nrr)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+  function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  function setProgress(pct) { document.getElementById('loadingBar').style.width = pct + '%'; }
 
   function populateUI(data) {
     animCount('mrrHero',  data.mrr,   '$', '', 1100, true);
@@ -359,27 +593,28 @@
     animCount('nrrCard',  data.nrr,   '', '%',  800, true);
 
     const retain = (100 - data.churn).toFixed(1);
-    document.getElementById('mrrSub').textContent = 'Up ' + data.mrrGrowth + '% this month';
-    document.getElementById('mrrSub').style.color = '#46d369';
+    document.getElementById('mrrSub').textContent = '↑ ' + data.mrrGrowth + '% this month';
     document.getElementById('churnSub').textContent = Math.round(data.churn) + ' in 100 cancel each month';
+    if (data.churn > 5) document.getElementById('churnSub').classList.add('warn');
     document.getElementById('churnBar').style.width = retain + '%';
     document.getElementById('churnDesc').textContent = retain + '% of subscribers renew';
-    document.getElementById('nrrSub').textContent = data.nrr >= 100 ? 'Upgrades outpace cancellations' : 'Contraction exceeds expansion';
 
-    document.getElementById('growthLabel').textContent = 'up ' + data.totalGrowth + '% over 8 months';
-    document.getElementById('growthLabel').style.opacity = '1';
+    const nrrSub = document.getElementById('nrrSub');
+    nrrSub.textContent = data.nrr >= 100 ? 'Upgrades outpace cancellations' : 'Contraction exceeds expansion';
+    if (data.nrr < 100) nrrSub.classList.add('warn');
+
+    const growthEl = document.getElementById('growthLabel');
+    growthEl.textContent = '↑ ' + data.totalGrowth + '% over 8 months';
+    growthEl.style.opacity = '1';
 
     drawChart(data.mrrSeries);
     document.getElementById('heroC').style.opacity = '1';
-
     setProgress(100);
     setTimeout(() => { document.getElementById('loadingBar').style.opacity = '0'; }, 600);
   }
 
   async function fetchAll() {
     setProgress(15);
-
-    // Use allSettled so one failing endpoint doesn't abort the whole fetch
     const settled = await Promise.allSettled([
       fetch(API + '/metrics/mrr').then(r => r.json()),
       fetch(API + '/metrics/churn').then(r => r.json()),
@@ -388,80 +623,54 @@
       fetch(API + '/metrics/nrr').then(r => r.json()),
       fetch(API + '/metrics/mrr-movement').then(r => r.json()),
     ]);
-
     setProgress(60);
 
-    const val = (i, fallback) =>
-      settled[i].status === 'fulfilled' ? settled[i].value : fallback;
-
-    // /metrics/mrr → single object { mrr, arr, active_subscriptions }
-    const mrrData     = val(0, {});
-    const churnRows   = val(1, []);
-    const ltvRows     = val(2, []);
-    const arpuRows    = val(3, []);
-    const nrrRows     = val(4, []);
+    const val = (i, fb) => settled[i].status === 'fulfilled' ? settled[i].value : fb;
+    const mrrData      = val(0, {});
+    const churnRows    = val(1, []);
+    const ltvRows      = val(2, []);
+    const arpuRows     = val(3, []);
+    const nrrRows      = val(4, []);
     const movementRows = val(5, []);
-
     setProgress(85);
 
-    // MRR / ARR — direct from single-object response
     const mrr = Number(mrrData.mrr ?? 0);
     const arr = Number(mrrData.arr ?? mrr * 12);
 
-    // Chart series — build cumulative MRR from movement data
     let mrrSeries;
     if (movementRows.length >= 2) {
       let running = 0;
       mrrSeries = movementRows.map(r => {
-        running += Number(r.new_mrr ?? 0)
-                 + Number(r.expansion_mrr ?? 0)
-                 - Number(r.contraction_mrr ?? 0)
-                 - Number(r.churned_mrr ?? 0);
+        running += Number(r.new_mrr ?? 0) + Number(r.expansion_mrr ?? 0)
+                 - Number(r.contraction_mrr ?? 0) - Number(r.churned_mrr ?? 0);
         return Math.max(running, 0);
       });
     } else {
-      // Fallback: smooth curve ending at current MRR
       mrrSeries = Array.from({ length: 8 }, (_, i) => Math.round(mrr * (0.6 + i * (0.4 / 7))));
     }
 
-    const latestMrr = mrrSeries[mrrSeries.length - 1] || mrr;
-    const firstMrr  = mrrSeries[0] || latestMrr;
+    const latestMrr  = mrrSeries[mrrSeries.length - 1] || mrr;
+    const firstMrr   = mrrSeries[0] || latestMrr;
     const totalGrowth = firstMrr > 0 ? Math.round(((latestMrr - firstMrr) / firstMrr) * 100) : 0;
-    const prevMrr   = mrrSeries[mrrSeries.length - 2] || latestMrr;
-    const mrrGrowth = prevMrr > 0 ? ((latestMrr - prevMrr) / prevMrr * 100).toFixed(1) : '0';
+    const prevMrr    = mrrSeries[mrrSeries.length - 2] || latestMrr;
+    const mrrGrowth  = prevMrr > 0 ? ((latestMrr - prevMrr) / prevMrr * 100).toFixed(1) : '0';
 
-    // Churn — array; field is churn_rate_pct (already a percentage)
     const latestChurnRow = churnRows[churnRows.length - 1] || {};
     const churnRate = parseFloat(Number(latestChurnRow.churn_rate_pct ?? 0).toFixed(1));
 
-    // LTV — array of customers; average their lifetime_revenue
     let ltv = 0;
     if (ltvRows.length > 0) {
-      const total = ltvRows.reduce((sum, r) => sum + Number(r.lifetime_revenue ?? 0), 0);
-      ltv = Math.round(total / ltvRows.length);
+      ltv = Math.round(ltvRows.reduce((s, r) => s + Number(r.lifetime_revenue ?? 0), 0) / ltvRows.length);
     }
 
-    // ARPU — find the "Overall" row; field is arpu
-    const overallArpu = arpuRows.find(r =>
-      String(r.plan ?? '').toLowerCase() === 'overall'
-    ) || arpuRows[0] || {};
+    const overallArpu = arpuRows.find(r => String(r.plan ?? '').toLowerCase() === 'overall') || arpuRows[0] || {};
     const arpu = Math.round(Number(overallArpu.arpu ?? 0));
 
-    // NRR — array; field is nrr_pct (already a percentage)
     const latestNrrRow = nrrRows[nrrRows.length - 1] || {};
     const nrr = Math.round(Number(latestNrrRow.nrr_pct ?? 100));
 
-    return {
-      mrrSeries,
-      mrr,
-      arr,
-      arpu,
-      churn: churnRate,
-      ltv,
-      nrr,
-      mrrGrowth,
-      totalGrowth,
-    };
+    rawData = { mrr, arr, churnRows, ltvRows, arpuRows, nrrRows, movementRows };
+    return { mrrSeries, mrr, arr, arpu, churn: churnRate, ltv, nrr, mrrGrowth, totalGrowth };
   }
 
   async function init() {
@@ -470,8 +679,8 @@
       const data = await fetchAll();
       populateUI(data);
     } catch (err) {
-      console.error('Could not reach API:', err);
-      document.getElementById('loadingBar').style.background = '#555';
+      console.error('API error:', err);
+      document.getElementById('loadingBar').style.background = '#dc2626';
       document.getElementById('loadingBar').style.width = '100%';
     }
   }
@@ -479,11 +688,14 @@
   window.addEventListener('load', init);
   window.addEventListener('resize', () => {
     const cv = document.getElementById('heroC');
-    if (cv.style.opacity === '1') drawChart(
-      Array.from({ length: 8 }, (_, i) => 7200 + i * 760)
-    );
+    if (cv.style.opacity === '1' && rawData.movementRows) {
+      let running = 0;
+      const series = rawData.movementRows.map(r => Math.max(
+        running += Number(r.new_mrr??0) + Number(r.expansion_mrr??0) - Number(r.contraction_mrr??0) - Number(r.churned_mrr??0), 0
+      ));
+      drawChart(series.length ? series : Array.from({ length: 8 }, (_, i) => Math.round((rawData.mrr||0) * (0.6 + i*(0.4/7)))));
+    }
   });
 </script>
-
 </body>
 </html>
