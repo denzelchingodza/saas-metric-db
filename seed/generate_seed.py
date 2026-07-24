@@ -1,11 +1,12 @@
 import random
+import os
 from datetime import datetime, timedelta, timezone
 from faker import Faker
 import psycopg2
 
 fake = Faker()
 
-DB_URL = "postgresql://admin:password@localhost:5432/saas_metrics"
+DB_URL = os.getenv("DATABASE_URL", "postgresql://admin:password@localhost:5432/saas_metrics")
 
 def get_connection():
     return psycopg2.connect(DB_URL)
