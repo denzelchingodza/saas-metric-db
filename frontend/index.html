@@ -213,12 +213,12 @@
       </div>
       <div>
         <div style="font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 0.875rem;">API endpoints</div>
-        <a class="ep-link" href="http://localhost:8000/metrics/mrr" target="_blank">GET /metrics/mrr ↗</a>
-        <a class="ep-link" href="http://localhost:8000/metrics/churn" target="_blank">GET /metrics/churn ↗</a>
-        <a class="ep-link" href="http://localhost:8000/metrics/ltv" target="_blank">GET /metrics/ltv ↗</a>
-        <a class="ep-link" href="http://localhost:8000/metrics/arpu" target="_blank">GET /metrics/arpu ↗</a>
-        <a class="ep-link" href="http://localhost:8000/metrics/nrr" target="_blank">GET /metrics/nrr ↗</a>
-        <a class="ep-link" href="http://localhost:8000/metrics/mrr-movement" target="_blank">GET /metrics/mrr-movement ↗</a>
+        <a class="ep-link" href="/metrics/mrr" target="_blank">GET /metrics/mrr ↗</a>
+        <a class="ep-link" href="/metrics/churn" target="_blank">GET /metrics/churn ↗</a>
+        <a class="ep-link" href="/metrics/ltv" target="_blank">GET /metrics/ltv ↗</a>
+        <a class="ep-link" href="/metrics/arpu" target="_blank">GET /metrics/arpu ↗</a>
+        <a class="ep-link" href="/metrics/nrr" target="_blank">GET /metrics/nrr ↗</a>
+        <a class="ep-link" href="/metrics/mrr-movement" target="_blank">GET /metrics/mrr-movement ↗</a>
       </div>
     </div>
 
@@ -238,7 +238,7 @@
 </div>
 
 <script>
-  const API = 'http://localhost:8000';
+  const API = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
 
   const cohorts = [
     { label: 'Dec 24', vals: [100, 79, 63, 48, 34] },
