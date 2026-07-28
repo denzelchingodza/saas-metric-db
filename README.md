@@ -257,7 +257,7 @@ CASE
 END AS monthly_value
 ```
 
-This pattern is repeated in MRR, ARR, ARPU, NRR, and MRR movement — every query that touches revenue has to handle both cycles.
+This pattern is repeated in MRR, ARR, ARPU, NRR, and MRR movement every query that touches revenue has to handle both cycles.
 
 **Division by zero in churn rate**
 
@@ -271,7 +271,7 @@ ROUND(churned::NUMERIC / NULLIF(new_subs, 0) * 100, 2) AS churn_rate_pct
 
 **asyncpg connection pool not ready on first request**
 
-The pool uses a lazy initialisation pattern — it's created on first use, not at startup. On the very first request after a cold start, `get_pool()` had to `await asyncpg.create_pool()` before returning. Under concurrent first requests this caused a race condition where multiple coroutines all entered the `if _pool is None` branch simultaneously and each tried to create a separate pool. Fixed by ensuring the pool is initialised in FastAPI's startup event before any requests are served, so `get_pool()` always returns an already-created pool.
+The pool uses a lazy initialisation pattern it's created on first use, not at startup. On the very first request after a cold start, `get_pool()` had to `await asyncpg.create_pool()` before returning. Under concurrent first requests this caused a race condition where multiple coroutines all entered the `if _pool is None` branch simultaneously and each tried to create a separate pool. Fixed by ensuring the pool is initialised in FastAPI's startup event before any requests are served, so `get_pool()` always returns an already created pool.
 
 **asyncpg returning Record objects instead of dicts**
 
