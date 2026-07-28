@@ -242,4 +242,60 @@ Or point any SQL client (TablePlus, DBeaver, pgAdmin) at `localhost:5432` with u
 
 I wanted a portfolio project that goes beyond basic CRUD and shows real business logic the kind of SQL and data modelling that actually gets used in production. SaaS metrics are something every software company cares about. Building this covered normalised schema design, advanced SQL (window functions, CTEs, date arithmetic), Docker containerisation, and exposing database results through a clean async API with a frontend that consumes it.
 
+---
+
+## What broke and how I fixed it
+
+**Annual billing producing wrong MRR**
+
+The first version of the MRR query summed `price_monthly` for all active subscriptions. Customers on annual billing were contributing their monthly equivalent at the wrong rate because `price_annual` is discounted (not simply `price_monthly * 12`). Fixed by normalising billing cycle in every metric query:
+
+```sql
+CASE
+    WHEN s.billing_cycle = 'annual' THEN p.price_annual / 12
+    ELSE p.price_monthly
+END AS monthly_value
+```
+
+This pattern is repeated in MRR, ARR, ARPU, NRR, and MRR movement — every query that touches revenue has to handle both cycles.
+
+**Division by zero in churn rate**
+
+The churn rate query divides churned subscriptions by new subscriptions per month. In months with no new subscriptions (early seed data, edge months), this produced a PostgreSQL division-by-zero error. Fixed with `NULLIF`:
+
+```sql
+ROUND(churned::NUMERIC / NULLIF(new_subs, 0) * 100, 2) AS churn_rate_pct
+```
+
+`NULLIF(new_subs, 0)` returns NULL when `new_subs` is zero, which makes the division return NULL instead of throwing.
+
+**asyncpg connection pool not ready on first request**
+
+The pool uses a lazy initialisation pattern — it's created on first use, not at startup. On the very first request after a cold start, `get_pool()` had to `await asyncpg.create_pool()` before returning. Under concurrent first requests this caused a race condition where multiple coroutines all entered the `if _pool is None` branch simultaneously and each tried to create a separate pool. Fixed by ensuring the pool is initialised in FastAPI's startup event before any requests are served, so `get_pool()` always returns an already-created pool.
+
+**asyncpg returning Record objects instead of dicts**
+
+`conn.fetchrow()` and `conn.fetch()` return asyncpg `Record` objects, not Python dicts. FastAPI's JSON serialiser doesn't know how to handle them and raises `TypeError: Object of type Record is not JSON serializable`. Fixed by converting at the return site:
+
+```python
+return [dict(row) for row in rows]   # for lists
+return dict(row)                      # for single rows
+```
+
+**`NUMERIC` type not serialising cleanly**
+
+PostgreSQL `NUMERIC` columns (used for currency precision) come back as Python `Decimal` objects via asyncpg. FastAPI's default JSON encoder doesn't handle `Decimal`. Fixed by casting to `float` at the return site for all monetary values: `"mrr": float(row["mrr"])`.
+
+---
+
+## Technical notes
+
+- **asyncpg over psycopg2** — asyncpg is a pure-async PostgreSQL driver with no synchronous fallback. It's significantly faster than psycopg2 for async workloads because it uses PostgreSQL's binary protocol and avoids the GIL overhead of the C extension.
+- **Connection pool** — `asyncpg.create_pool()` maintains a pool of persistent connections. Each route handler acquires a connection with `async with pool.acquire() as conn:` and releases it automatically on exit — no manual connection management needed.
+- **CTEs for complex metrics** — NRR, MRR movement, and cohort retention are all structured as chains of CTEs rather than nested subqueries. CTEs are materialised once and reused, making the query plan easier to read and debug.
+- **NULLIF as a zero guard** — used in every query that divides by a count. PostgreSQL raises an error on integer division by zero; `NULLIF(denominator, 0)` short-circuits cleanly to NULL which propagates through the arithmetic.
+- **Docker Compose** — `docker-compose.yml` defines both the PostgreSQL service and the FastAPI service. PostgreSQL initialises with the schema SQL on first run via the `init.sql` mount. `docker compose up --build` is the only command needed to run the full stack locally.
+
+---
+
 Built by Denzel · 2026
