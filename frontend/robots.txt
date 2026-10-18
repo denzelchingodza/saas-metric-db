@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://saas-metric-db.onrender.com/sitemap.xml
